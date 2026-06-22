@@ -70,6 +70,8 @@ async function run() {
       }
     });
 
+    
+
 
     app.post('/api/lawyers', async (req, res) => {
       const lawyer = req.body;
