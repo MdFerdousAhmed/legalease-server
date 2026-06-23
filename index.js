@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require("cors")
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 dotenv.config();
 const app = express();
 const port = process.env.PORT;
@@ -33,7 +33,7 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
 
     const database = client.db("legalease_db");
-    const lawyerCollection = database.collection("lawyers");
+    const lawyersCollection = database.collection("lawyers");
 
     app.get("/api/lawyers", async (req, res) => {
       try {
@@ -53,7 +53,7 @@ async function run() {
           query.specialization = req.query.specialization;
         }
 
-        const lawyers = await lawyerCollection.find(query);
+        const lawyers = await lawyersCollection.find(query);
         const result = await lawyers.toArray();
         res.send(result);
 
@@ -70,12 +70,42 @@ async function run() {
       }
     });
 
-    
+    app.get('/api/lawyers/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        _id: new ObjectId(id)
+      }
+      const result = await lawyersCollection.findOne(query);
+      res.send(result);
+    })
+
+
+    // app.get("/api/lawyers/:id", async (req, res) => {
+    //   const { id } = req.query;
+
+    //   if (id) {
+    //     const lawyer = await lawyersCollection.findOne({
+    //       _id: new ObjectId(id),
+    //     });
+
+    //     return res.send({
+    //       success: true,
+    //       data: lawyer,
+    //     });
+    //   }
+
+    //   const lawyers = await lawyersCollection.find().toArray();
+
+    //   res.send({
+    //     success: true,
+    //     data: lawyers,
+    //   });
+    // });
 
 
     app.post('/api/lawyers', async (req, res) => {
       const lawyer = req.body;
-      const result = await lawyerCollection.insertOne(lawyer);
+      const result = await lawyersCollection.insertOne(lawyer);
       res.send(result);
     })
 
