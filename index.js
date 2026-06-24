@@ -34,6 +34,14 @@ async function run() {
 
     const database = client.db("legalease_db");
     const lawyersCollection = database.collection("lawyers");
+    const usersCollection = database.collection("user");
+    const hiresCollection = database.collection("hires");
+
+    app.get('api/users', async (req, res) => {
+      const cursor = usersCollection.find()
+      const result = await cursor.toArray();
+      res.send(result);
+    })
 
     app.get("/api/lawyers", async (req, res) => {
       try {
@@ -55,12 +63,12 @@ async function run() {
 
         const lawyers = await lawyersCollection.find(query);
         const result = await lawyers.toArray();
-        res.send(result);
+        // res.send(result);
 
         res.status(200).json({
           success: true,
           count: lawyers.length,
-          data: lawyers
+          data: result
         });
       } catch (error) {
         res.status(500).json({
@@ -79,28 +87,18 @@ async function run() {
       res.send(result);
     })
 
-
-    // app.get("/api/lawyers/:id", async (req, res) => {
-    //   const { id } = req.query;
-
-    //   if (id) {
-    //     const lawyer = await lawyersCollection.findOne({
-    //       _id: new ObjectId(id),
-    //     });
-
-    //     return res.send({
-    //       success: true,
-    //       data: lawyer,
-    //     });
-    //   }
-
-    //   const lawyers = await lawyersCollection.find().toArray();
-
-    //   res.send({
-    //     success: true,
-    //     data: lawyers,
-    //   });
-    // });
+    // hire related api
+    app.post('/api/hires', async (req, res) => {
+      const hire = req.body;
+      const newHire = {
+        ...hire,
+        createdAt: new Date()
+      }
+      console.log("new hire", newHire);
+      const result = await hiresCollection.insertOne(newHire);
+      console.log("result", result);
+      res.send(result);
+    })
 
 
     app.post('/api/lawyers', async (req, res) => {
