@@ -91,6 +91,7 @@ async function run() {
         const query = {};
 
         // filter by lawyerId (if you are using Mongo _id)
+
         if (req.query.lawyerId) {
           query._id = req.query.lawyerId;
         }
@@ -106,7 +107,7 @@ async function run() {
 
         const lawyers = await lawyersCollection.find(query);
         const result = await lawyers.toArray();
-        // res.send(result);
+        
 
         res.status(200).json({
           success: true,
@@ -130,7 +131,7 @@ async function run() {
       res.send(result);
     })
 
-    
+
     // hire related api
     app.get('/api/hires', verifyToken, async (req, res) => {
       const query = {};
