@@ -126,6 +126,7 @@ async function run() {
         _id: new ObjectId(id)
       }
       const result = await lawyersCollection.findOne(query);
+      console.log(result);
       res.send(result);
     })
 
@@ -137,7 +138,6 @@ async function run() {
         query.clientId = req.query.clientId;
 
         // check whether asking for user information or someone else
-        console.log(req.user, req.query.clientId)
         if (req.user._id.toString() !== req.query.clientId) {
           return res.status(403).send({ message: 'forbidden access' })
         }
