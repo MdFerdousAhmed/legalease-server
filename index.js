@@ -80,6 +80,7 @@ async function run() {
     app.get('api/users', async (req, res) => {
       const cursor = usersCollection.find()
       const result = await cursor.toArray();
+      console.log(result);
       res.send(result);
     })
 
@@ -126,7 +127,6 @@ async function run() {
         _id: new ObjectId(id)
       }
       const result = await lawyersCollection.findOne(query);
-      console.log(result);
       res.send(result);
     })
 
