@@ -36,6 +36,46 @@ async function run() {
     const lawyersCollection = database.collection("lawyers");
     const usersCollection = database.collection("user");
     const hiresCollection = database.collection("hires");
+    const sessionCollection = database.collection('session');
+
+
+    // verification related
+    const verifyToken = async (req, res, next) => {
+
+      const authHeader = req.headers?.authorization;
+      if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' })
+      }
+
+      const token = authHeader.split(' ')[1]
+
+      if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
+      }
+
+      const query = { token: token }
+      const session = await sessionCollection.findOne(query);
+
+      if (!session) {
+        return res.status(401).send({ message: 'unauthorized access' })
+      }
+
+      const userId = session.userId;
+
+
+      const userQuery = {
+        _id: userId
+      }
+
+      const user = await usersCollection.findOne(userQuery);
+      if (!user) {
+        return res.status(401).send({ message: 'unauthorized access' })
+      }
+      // set data in the req object
+      req.user = user;
+      next();
+    }
+
 
     app.get('api/users', async (req, res) => {
       const cursor = usersCollection.find()
@@ -43,6 +83,8 @@ async function run() {
       res.send(result);
     })
 
+
+    // lawyer related api
     app.get("/api/lawyers", async (req, res) => {
       try {
         const query = {};
@@ -87,7 +129,29 @@ async function run() {
       res.send(result);
     })
 
+    
     // hire related api
+    app.get('/api/hires', verifyToken, async (req, res) => {
+      const query = {};
+      if (req.query.clientId) {
+        query.clientId = req.query.clientId;
+
+        // check whether asking for user information or someone else
+        console.log(req.user, req.query.clientId)
+        if (req.user._id.toString() !== req.query.clientId) {
+          return res.status(403).send({ message: 'forbidden access' })
+        }
+
+      }
+      if (req.query.lawyerId) {
+        query.lawyerId = req.query.lawyerId;
+      }
+      const cursor = hiresCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+
     app.post('/api/hires', async (req, res) => {
       const hire = req.body;
       const newHire = {
