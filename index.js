@@ -85,6 +85,18 @@ async function run() {
       }
       next()
     }
+    const verifyLawyer = async(req, res, next) => {
+      if(req.user?.role !== 'lawyer'){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+      next()
+    }
+    const verifyAdmin = async(req, res, next) => {
+      if(req.user?.role !== 'admin'){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+      next()
+    }
 
     app.get('api/users', async (req, res) => {
       const cursor = usersCollection.find()
@@ -142,7 +154,7 @@ async function run() {
 
 
     // hire related api
-    app.get('/api/hires', verifyToken,  async (req, res) => {
+    app.get('/api/hires', verifyToken, verifyLawyer,  async (req, res) => {
       const query = {};
       if (req.query.clientId) {
         query.clientId = req.query.clientId;
