@@ -161,7 +161,19 @@ async function run() {
       }
       console.log("new hire", newHire);
       const result = await hiresCollection.insertOne(newHire);
-      console.log("result", result);
+      res.send(result);
+    })
+
+    app.patch('/api/hires/:id', async(req, res) => {
+      const id = req.params.id;
+      const updatedHire = req.body;
+      const filter = {_id: new ObjectId(id)}
+      const updateDoc = {
+        $set: {
+          status: updatedHire.status
+        }
+      }
+      const result = await hiresCollection.updateOne(filter, updateDoc)
       res.send(result);
     })
 
