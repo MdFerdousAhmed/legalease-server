@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-const logger =(req, res, next) => {
+const logger = (req, res, next) => {
   console.log('logger middleware logger', req.params);
   next()
 }
@@ -34,8 +34,6 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
-    // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
 
     const database = client.db("legalease_db");
     const lawyersCollection = database.collection("lawyers");
@@ -79,31 +77,30 @@ async function run() {
       next();
     }
 
-    const verifyUser = async(req, res, next) => {
-      if(req.user?.role !== 'user'){
-        return res.status(403).send({message: 'forbidden access'})
+    const verifyUser = async (req, res, next) => {
+      if (req.user?.role !== 'user') {
+        return res.status(403).send({ message: 'forbidden access' })
       }
       next()
     }
-    const verifyLawyer = async(req, res, next) => {
-      if(req.user?.role !== 'lawyer'){
-        return res.status(403).send({message: 'forbidden access'})
+    const verifyLawyer = async (req, res, next) => {
+      if (req.user?.role !== 'lawyer') {
+        return res.status(403).send({ message: 'forbidden access' })
       }
       next()
     }
-    const verifyAdmin = async(req, res, next) => {
-      if(req.user?.role !== 'admin'){
-        return res.status(403).send({message: 'forbidden access'})
+    const verifyAdmin = async (req, res, next) => {
+      if (req.user?.role !== 'admin') {
+        return res.status(403).send({ message: 'forbidden access' })
       }
       next()
     }
 
-    app.get('api/users', async (req, res) => {
-      const cursor = usersCollection.find()
-      const result = await cursor.toArray();
-      console.log(result);
-      res.send(result);
-    })
+    // app.get('/api/users', async (req, res) => {
+    //   const cursor = usersCollection.find()
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // })
 
 
     // lawyer related api
@@ -128,7 +125,7 @@ async function run() {
 
         const lawyers = await lawyersCollection.find(query);
         const result = await lawyers.toArray();
-        
+
 
         res.status(200).json({
           success: true,
@@ -152,9 +149,15 @@ async function run() {
       res.send(result);
     })
 
+    app.post('/api/lawyers', async (req, res) => {
+      const lawyer = req.body;
+      const result = await lawyersCollection.insertOne(lawyer);
+      res.send(result);
+    })
+
 
     // hire related api
-    app.get('/api/hires', verifyToken, verifyLawyer,  async (req, res) => {
+    app.get('/api/hires', verifyToken, async (req, res) => {
       const query = {};
       if (req.query.clientId) {
         query.clientId = req.query.clientId;
@@ -185,10 +188,10 @@ async function run() {
       res.send(result);
     })
 
-    app.patch('/api/hires/:id', logger, verifyToken, async(req, res) => {
+    app.patch('/api/hires/:id', logger, verifyToken, verifyLawyer, async (req, res) => {
       const id = req.params.id;
       const updatedHire = req.body;
-      const filter = {_id: new ObjectId(id)}
+      const filter = { _id: new ObjectId(id) }
       const updateDoc = {
         $set: {
           status: updatedHire.status
@@ -198,13 +201,8 @@ async function run() {
       res.send(result);
     })
 
-
-    app.post('/api/lawyers', async (req, res) => {
-      const lawyer = req.body;
-      const result = await lawyersCollection.insertOne(lawyer);
-      res.send(result);
-    })
-
+    // Send a ping to confirm a successful connection
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
