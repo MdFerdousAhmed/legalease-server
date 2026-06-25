@@ -13,6 +13,11 @@ app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
+const logger =(req, res, next) => {
+  console.log('logger middleware logger', req.params);
+  next()
+}
+
 
 const uri = process.env.MONGO_DB_URI;
 
@@ -38,10 +43,8 @@ async function run() {
     const hiresCollection = database.collection("hires");
     const sessionCollection = database.collection('session');
 
-
     // verification related
     const verifyToken = async (req, res, next) => {
-
       const authHeader = req.headers?.authorization;
       if (!authHeader) {
         return res.status(401).send({ message: 'unauthorized access' })
@@ -76,6 +79,7 @@ async function run() {
       next();
     }
 
+    
 
     app.get('api/users', async (req, res) => {
       const cursor = usersCollection.find()
@@ -164,7 +168,7 @@ async function run() {
       res.send(result);
     })
 
-    app.patch('/api/hires/:id', async(req, res) => {
+    app.patch('/api/hires/:id', logger, verifyToken, async(req, res) => {
       const id = req.params.id;
       const updatedHire = req.body;
       const filter = {_id: new ObjectId(id)}
