@@ -108,14 +108,20 @@ async function run() {
       try {
         const query = {};
 
-        // filter by lawyerId (if you are using Mongo _id)
+        // 1. Extract and parse pagination parameters from req.query
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 8;
+        const skip = (page - 1) * limit;
 
+        // Filter by lawyerId (if you are using Mongo _id)
         if (req.query.lawyerId) {
           query._id = req.query.lawyerId;
         }
 
-        // optional filters
-        if (req.query.status) {
+        // Optional filters matching your frontend
+        if (req.query.availability) { // Frontend passes 'availability', maps to database 'status'
+          query.status = req.query.availability;
+        } else if (req.query.status) {
           query.status = req.query.status;
         }
 
@@ -123,15 +129,29 @@ async function run() {
           query.specialization = req.query.specialization;
         }
 
-        const lawyers = await lawyersCollection.find(query);
-        const result = await lawyers.toArray();
+        // Text search filter (Case-insensitive matching for name)
+        if (req.query.search) {
+          query.name = { $regex: req.query.search, $options: "i" };
+        }
 
+        // 2. Fetch data with skip & limit, and get total matching counts in parallel
+        const [result, totalItems] = await Promise.all([
+          lawyersCollection.find(query).skip(skip).limit(limit).toArray(),
+          lawyersCollection.countDocuments(query) // Total counts ignoring limit
+        ]);
 
+        // 3. Calculate total pages
+        const totalPages = Math.ceil(totalItems / limit);
+
+        // 4. Return structured JSON that our frontend state looks for
         res.status(200).json({
           success: true,
-          count: lawyers.length,
-          data: result
+          data: result,
+          totalPages: totalPages,
+          totalItems: totalItems,
+          currentPage: page
         });
+
       } catch (error) {
         res.status(500).json({
           success: false,
@@ -200,6 +220,9 @@ async function run() {
       const result = await hiresCollection.updateOne(filter, updateDoc)
       res.send(result);
     })
+
+    // payment system
+
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
