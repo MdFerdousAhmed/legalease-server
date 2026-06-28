@@ -96,11 +96,99 @@ async function run() {
       next()
     }
 
+
     // app.get('/api/users', async (req, res) => {
     //   const cursor = usersCollection.find()
     //   const result = await cursor.toArray();
     //   res.send(result);
     // })
+
+
+
+    app.patch('/api/users/:id', verifyToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedUser = req.body; // Contains { name, image, email } from your frontend fetch
+
+        const filter = { _id: new ObjectId(id) };
+
+        // Build the update object dynamically based on what the frontend sends
+        const updateFields = {};
+
+        if (updatedUser.name) updateFields.name = updatedUser.name;
+        if (updatedUser.image) updateFields.image = updatedUser.image;
+        if (updatedUser.status) updateFields.status = updatedUser.status; // Keeps your old status logic working too!
+
+        const updateDoc = {
+          $set: updateFields
+        };
+
+        const result = await usersCollection.updateOne(filter, updateDoc);
+
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ success: false, message: "User not found" });
+        }
+
+        res.send({ success: true, result });
+      } catch (error) {
+        console.error("Backend Error:", error);
+        res.status(500).send({ success: false, message: "Internal Server Error" });
+      }
+    });
+
+    // ASSUMPTION: You should have a middleware like verifyAdmin to prevent users from promoting themselves.
+    app.patch("/api/users/:id/userRole", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { userRole } = req.body;
+
+        if (!userRole) {
+          return res.status(400).json({
+            success: false,
+            message: "userRole is required",
+          });
+        }
+
+        const allowedRoles = ["user", "lawyer", "admin"];
+
+        if (!allowedRoles.includes(userRole)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid role",
+          });
+        }
+
+        const result = await usersCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: {
+              userRole,
+            },
+          }
+        );
+
+        if (!result.matchedCount) {
+          return res.status(404).json({
+            success: false,
+            message: "User not found",
+          });
+        }
+
+        res.json({
+          success: true,
+          message: "Role updated successfully",
+        });
+      } catch (err) {
+        console.log(err);
+
+        res.status(500).json({
+          success: false,
+          message: "Internal Server Error",
+        });
+      }
+    });
 
 
     // lawyer related api
