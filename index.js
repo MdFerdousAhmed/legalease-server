@@ -97,11 +97,11 @@ async function run() {
     }
 
 
-    // app.get('/api/users', async (req, res) => {
-    //   const cursor = usersCollection.find()
-    //   const result = await cursor.toArray();
-    //   res.send(result);
-    // })
+    app.get('/api/users', async (req, res) => {
+      const cursor = usersCollection.find()
+      const result = await cursor.toArray();
+      res.send(result);
+    })
 
 
 
