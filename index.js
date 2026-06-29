@@ -103,21 +103,28 @@ async function run() {
       res.send(result);
     })
 
-
-
-    app.patch('/api/users/:id', verifyToken, async (req, res) => {
+    app.patch('/api/users/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        const updatedUser = req.body; // Contains { name, image, email } from your frontend fetch
+        const updatedUser = req.body; // Dynamic object parsing from user input forms
+
+        // Validate if ID is a valid 24-character hex string for MongoDB
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({ success: false, message: "Invalid User ID format" });
+        }
 
         const filter = { _id: new ObjectId(id) };
-
-        // Build the update object dynamically based on what the frontend sends
         const updateFields = {};
 
+        // Build the update object dynamically based on what fields the frontend actually submits
         if (updatedUser.name) updateFields.name = updatedUser.name;
         if (updatedUser.image) updateFields.image = updatedUser.image;
-        if (updatedUser.status) updateFields.status = updatedUser.status; // Keeps your old status logic working too!
+        if (updatedUser.status) updateFields.status = updatedUser.status;
+
+        // Safety guard: Prevent database transaction crashes from empty requests
+        if (Object.keys(updateFields).length === 0) {
+          return res.status(400).send({ success: false, message: "No valid tracking field updates were provided" });
+        }
 
         const updateDoc = {
           $set: updateFields
@@ -125,13 +132,19 @@ async function run() {
 
         const result = await usersCollection.updateOne(filter, updateDoc);
 
+        // Error assessment if no document matching the ID parameters was found
         if (result.matchedCount === 0) {
-          return res.status(404).send({ success: false, message: "User not found" });
+          return res.status(404).send({ success: false, message: "User account records not found" });
         }
 
-        res.send({ success: true, result });
+        res.send({
+          success: true,
+          message: "User profile updated successfully!",
+          result
+        });
+
       } catch (error) {
-        console.error("Backend Error:", error);
+        console.error("Backend Runtime Error:", error);
         res.status(500).send({ success: false, message: "Internal Server Error" });
       }
     });
